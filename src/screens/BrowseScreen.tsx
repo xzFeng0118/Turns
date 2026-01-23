@@ -1,14 +1,16 @@
 import React from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Screen } from '@/components/Screen';
 import { mockItems } from '@/data/mockItems';
 import type { RootStackParamList } from '@/navigation/types';
+import type { MarketplaceItem } from '@/types/marketplace';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Tabs'>;
+export function BrowseScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-export function BrowseScreen({ navigation }: Props) {
   return (
     <Screen>
       <Text style={styles.title}>Browse</Text>
@@ -16,9 +18,9 @@ export function BrowseScreen({ navigation }: Props) {
 
       <FlatList
         data={mockItems}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: MarketplaceItem) => item.id}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
-        renderItem={({ item }) => (
+        renderItem={({ item }: { item: MarketplaceItem }) => (
           <Pressable
             style={styles.card}
             onPress={() => navigation.navigate('ItemDetails', { itemId: item.id })}
