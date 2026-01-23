@@ -1,11 +1,12 @@
 export type RootStackParamList = {
+  Login: undefined;
   Tabs: undefined;
   ItemDetails: { itemId: string };
 };
 
 export type TabsParamList = {
-  Browse: undefined;
+  Home: undefined;
   Sell: undefined;
-  Messages: undefined;
+  Orders: undefined;
   Profile: undefined;
 };

@@ -3,13 +3,13 @@ import { StyleSheet, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Screen } from '@/components/Screen';
-import { mockItems } from '@/data/mockItems';
 import type { RootStackParamList } from '@/navigation/types';
+import { useItem } from '@/hooks/useItem';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ItemDetails'>;
 
 export function ItemDetailsScreen({ route }: Props) {
-  const item = mockItems.find((i) => i.id === route.params.itemId);
+  const { item } = useItem(route.params.itemId);
 
   return (
     <Screen>
