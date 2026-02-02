@@ -7,17 +7,17 @@ import { Screen } from '@/components/Screen';
 import type { RootStackParamList } from '@/navigation/types';
 import { useAuth } from '@/contexts/AuthContext';
 
-export function LoginScreen() {
+export function RegisterScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { signIn, loading } = useAuth();
+  const { signUp, loading } = useAuth();
 
-  const [email, setEmail] = useState('demo@turns.app');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   return (
     <Screen>
-      <Text style={styles.title}>Login</Text>
-      <Text style={styles.subtitle}>Sign in with your email and password.</Text>
+      <Text style={styles.title}>Create account</Text>
+      <Text style={styles.subtitle}>Sign up with your email and password.</Text>
 
       <View style={styles.form}>
         <Text style={styles.label}>Email</Text>
@@ -42,14 +42,14 @@ export function LoginScreen() {
 
         <Pressable
           style={[styles.button, loading ? styles.buttonDisabled : null]}
-          onPress={() => signIn(email, password)}
+          onPress={() => signUp(email, password)}
           disabled={loading}
         >
-          <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Sign in'}</Text>
+          <Text style={styles.buttonText}>{loading ? 'Creating…' : 'Create account'}</Text>
         </Pressable>
 
-        <Pressable onPress={() => navigation.navigate('Register')} disabled={loading}>
-          <Text style={styles.link}>Create an account</Text>
+        <Pressable onPress={() => navigation.navigate('Login')} disabled={loading}>
+          <Text style={styles.link}>Already have an account? Sign in</Text>
         </Pressable>
       </View>
     </Screen>

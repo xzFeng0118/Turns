@@ -3,16 +3,17 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { ProfileListSection } from '@/components/ProfileListSection';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useMyListings } from '@/hooks/useMyListings';
 import type { Listing } from '@/types/listings';
 
 export function ProfileScreen() {
-  const { currentUser, signOut, isLoading } = useAuth();
+  const { user, signOut, loading } = useAuth();
   const { listings } = useMyListings();
 
-  const initials = (currentUser?.name ?? 'User')
-    .split(' ')
+  const email = user?.email ?? '';
+  const initials = (email || 'U')
+    .split(/\s+|@/)
     .filter(Boolean)
     .slice(0, 2)
     .map((p) => p[0]?.toUpperCase())
@@ -22,7 +23,7 @@ export function ProfileScreen() {
     <Screen>
       <Text style={styles.title}>Profile</Text>
 
-      {currentUser ? (
+      {user ? (
         <>
           <View style={styles.header}>
             <View style={styles.avatar}>
@@ -30,13 +31,13 @@ export function ProfileScreen() {
             </View>
 
             <View style={styles.userInfo}>
-              <Text style={styles.name}>{currentUser.name}</Text>
-              <Text style={styles.email}>{currentUser.email}</Text>
+              <Text style={styles.name}>Account</Text>
+              <Text style={styles.email}>{email}</Text>
             </View>
           </View>
 
-          <Pressable style={[styles.button, isLoading ? styles.buttonDisabled : null]} onPress={signOut} disabled={isLoading}>
-            <Text style={styles.buttonText}>{isLoading ? 'Logging out…' : 'Logout'}</Text>
+          <Pressable style={[styles.button, loading ? styles.buttonDisabled : null]} onPress={signOut} disabled={loading}>
+            <Text style={styles.buttonText}>{loading ? 'Logging out…' : 'Logout'}</Text>
           </Pressable>
 
           <ProfileListSection

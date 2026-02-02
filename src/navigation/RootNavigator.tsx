@@ -1,4 +1,5 @@
 import React from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -6,23 +7,35 @@ import { TabsNavigator } from './TabsNavigator';
 import type { RootStackParamList } from './types';
 import { ItemDetailsScreen } from '@/screens/ItemDetailsScreen';
 import { LoginScreen } from '@/screens/LoginScreen';
-import { useAuth } from '@/hooks/useAuth';
+import { RegisterScreen } from '@/screens/RegisterScreen';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
-  const { currentUser } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        {currentUser ? (
+        {user ? (
           <>
             <Stack.Screen name="Tabs" component={TabsNavigator} options={{ headerShown: false }} />
             <Stack.Screen name="ItemDetails" component={ItemDetailsScreen} options={{ title: 'Item' }} />
           </>
         ) : (
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>
