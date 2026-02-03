@@ -15,6 +15,7 @@ type AuthContextValue = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  error?: string;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     let mounted = true;
@@ -48,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: subscription } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
         if (!mounted) return;
+        setError(undefined);
         setSession(newSession);
         setUser(newSession?.user ?? null);
       },
@@ -61,12 +64,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true);
+    setError(undefined);
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Sign-in failed.');
+      throw e;
     } finally {
       setLoading(false);
     }
@@ -74,12 +81,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(async (email: string, password: string) => {
     setLoading(true);
+    setError(undefined);
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
       });
       if (error) throw error;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Sign-up failed.');
+      throw e;
     } finally {
       setLoading(false);
     }
@@ -87,9 +98,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     setLoading(true);
+    setError(undefined);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Sign-out failed.');
+      throw e;
     } finally {
       setLoading(false);
     }
@@ -100,11 +115,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       loading,
+      error,
       signIn,
       signUp,
       signOut,
     }),
-    [loading, session, signIn, signOut, signUp, user],
+    [error, loading, session, signIn, signOut, signUp, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

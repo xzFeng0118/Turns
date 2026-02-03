@@ -9,10 +9,10 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { signIn, loading } = useAuth();
+  const { signIn, loading, error } = useAuth();
 
-  const [email, setEmail] = useState('demo@turns.app');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   return (
     <Screen>
@@ -42,11 +42,19 @@ export function LoginScreen() {
 
         <Pressable
           style={[styles.button, loading ? styles.buttonDisabled : null]}
-          onPress={() => signIn(email, password)}
+          onPress={async () => {
+            try {
+              await signIn(email, password);
+            } catch {
+              return;
+            }
+          }}
           disabled={loading}
         >
           <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Sign in'}</Text>
         </Pressable>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Pressable onPress={() => navigation.navigate('Register')} disabled={loading}>
           <Text style={styles.link}>Create an account</Text>
@@ -68,6 +76,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
+  error: { marginTop: 12, color: '#b00020' },
   link: { marginTop: 14, color: '#111', fontWeight: '700', textAlign: 'center' },
   button: {
     marginTop: 18,

@@ -9,7 +9,8 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export function RegisterScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { signUp, loading } = useAuth();
+  const { signUp, loading, error } = useAuth();
+  const [info, setInfo] = useState<string | undefined>(undefined);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,11 +43,22 @@ export function RegisterScreen() {
 
         <Pressable
           style={[styles.button, loading ? styles.buttonDisabled : null]}
-          onPress={() => signUp(email, password)}
+          onPress={async () => {
+            setInfo(undefined);
+            try {
+              await signUp(email, password);
+              setInfo('Account created. If email confirmation is enabled, check your inbox before signing in.');
+            } catch {
+              return;
+            }
+          }}
           disabled={loading}
         >
           <Text style={styles.buttonText}>{loading ? 'Creating…' : 'Create account'}</Text>
         </Pressable>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {info ? <Text style={styles.info}>{info}</Text> : null}
 
         <Pressable onPress={() => navigation.navigate('Login')} disabled={loading}>
           <Text style={styles.link}>Already have an account? Sign in</Text>
@@ -68,6 +80,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
+  error: { marginTop: 12, color: '#b00020' },
+  info: { marginTop: 12, color: '#666' },
   link: { marginTop: 14, color: '#111', fontWeight: '700', textAlign: 'center' },
   button: {
     marginTop: 18,
