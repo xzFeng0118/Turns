@@ -7,17 +7,18 @@ import { Screen } from '@/components/Screen';
 import type { RootStackParamList } from '@/navigation/types';
 import { useAuth } from '@/contexts/AuthContext';
 
-export function LoginScreen() {
+export function RegisterScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { signIn, loading, error } = useAuth();
+  const { signUp, loading, error } = useAuth();
+  const [info, setInfo] = useState<string | undefined>(undefined);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   return (
     <Screen>
-      <Text style={styles.title}>Login</Text>
-      <Text style={styles.subtitle}>Sign in with your email and password.</Text>
+      <Text style={styles.title}>Create account</Text>
+      <Text style={styles.subtitle}>Sign up with your email and password.</Text>
 
       <View style={styles.form}>
         <Text style={styles.label}>Email</Text>
@@ -43,21 +44,24 @@ export function LoginScreen() {
         <Pressable
           style={[styles.button, loading ? styles.buttonDisabled : null]}
           onPress={async () => {
+            setInfo(undefined);
             try {
-              await signIn(email, password);
+              await signUp(email, password);
+              setInfo('Account created. If email confirmation is enabled, check your inbox before signing in.');
             } catch {
               return;
             }
           }}
           disabled={loading}
         >
-          <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Sign in'}</Text>
+          <Text style={styles.buttonText}>{loading ? 'Creating…' : 'Create account'}</Text>
         </Pressable>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        {info ? <Text style={styles.info}>{info}</Text> : null}
 
-        <Pressable onPress={() => navigation.navigate('Register')} disabled={loading}>
-          <Text style={styles.link}>Create an account</Text>
+        <Pressable onPress={() => navigation.navigate('Login')} disabled={loading}>
+          <Text style={styles.link}>Already have an account? Sign in</Text>
         </Pressable>
       </View>
     </Screen>
@@ -77,6 +81,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   error: { marginTop: 12, color: '#b00020' },
+  info: { marginTop: 12, color: '#666' },
   link: { marginTop: 14, color: '#111', fontWeight: '700', textAlign: 'center' },
   button: {
     marginTop: 18,
