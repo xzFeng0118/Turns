@@ -12,12 +12,26 @@ function getFileName(localUri: string) {
   return `${last}.jpg`;
 }
 
+function inferContentType(filename: string, blobType?: string) {
+  if (blobType && blobType.includes('/')) return blobType;
+  const lower = filename.toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  return 'image/jpeg';
+}
+
 async function uriToBlob(localUri: string): Promise<Blob> {
   const res = await fetch(localUri);
   if (!res.ok) {
     throw new Error(`Failed to read image: ${res.status}`);
   }
-  return await res.blob();
+
+  const blob = await res.blob();
+  if (!blob || blob.size === 0) {
+    throw new Error('Failed to read image: empty blob');
+  }
+
+  return blob;
 }
 
 export async function uploadImage(localUri: string, userId: string, itemId: string): Promise<string> {
@@ -26,13 +40,21 @@ export async function uploadImage(localUri: string, userId: string, itemId: stri
 
   const blob = await uriToBlob(localUri);
 
-  const { error: uploadError } = await supabase.storage.from('item-images').upload(path, blob, {
-    contentType: 'image/jpeg',
+  const contentType = inferContentType(filename, blob.type);
+  const FileCtor = (globalThis as unknown as { File?: unknown }).File;
+  const body =
+    typeof FileCtor === 'function'
+      ? new (FileCtor as any)([blob], filename, { type: contentType })
+      : blob;
+
+  const { error: uploadError } = await supabase.storage.from('item-images').upload(path, body, {
+    contentType,
     upsert: true,
   });
 
   if (uploadError) {
-    throw new Error(uploadError.message);
+    const details = JSON.stringify(uploadError, Object.getOwnPropertyNames(uploadError));
+    throw new Error(`${uploadError.message}${details ? ` (${details})` : ''}`);
   }
 
   const { data } = supabase.storage.from('item-images').getPublicUrl(path);

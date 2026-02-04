@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { TabsNavigator } from './TabsNavigator';
 import type { RootStackParamList } from './types';
-import { ItemDetailsScreen } from '@/screens/ItemDetailsScreen';
+import { ItemDetailScreen } from '@/screens/ItemDetailScreen';
 import { LoginScreen } from '@/screens/LoginScreen';
 import { RegisterScreen } from '@/screens/RegisterScreen';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,18 +25,11 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        {user ? (
-          <>
-            <Stack.Screen name="Tabs" component={TabsNavigator} options={{ headerShown: false }} />
-            <Stack.Screen name="ItemDetails" component={ItemDetailsScreen} options={{ title: 'Item' }} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
-          </>
-        )}
+      <Stack.Navigator initialRouteName={user ? 'Tabs' : 'Login'}>
+        <Stack.Screen name="Tabs" component={TabsNavigator} options={{ headerShown: false }} />
+        <Stack.Screen name="ItemDetails" component={ItemDetailScreen} options={{ title: 'Item' }} />
+        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

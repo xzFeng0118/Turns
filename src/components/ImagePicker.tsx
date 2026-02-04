@@ -13,6 +13,8 @@ export function ImagePicker({ value, onChange, disabled = false }: Props) {
   const [isPicking, setIsPicking] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
+  const safeValue = Array.isArray(value) ? value : [];
+
   const pickFromLibrary = async () => {
     setIsPicking(true);
     setError(undefined);
@@ -33,7 +35,7 @@ export function ImagePicker({ value, onChange, disabled = false }: Props) {
       }
 
       const newUris = result.images.map((i) => i.uri);
-      const merged = Array.from(new Set([...value, ...newUris]));
+      const merged = Array.from(new Set([...safeValue, ...newUris]));
       onChange(merged);
     } finally {
       setIsPicking(false);
@@ -41,7 +43,7 @@ export function ImagePicker({ value, onChange, disabled = false }: Props) {
   };
 
   const removeUri = (uri: string) => {
-    onChange(value.filter((v) => v !== uri));
+    onChange(safeValue.filter((v) => v !== uri));
   };
 
   return (
@@ -61,14 +63,14 @@ export function ImagePicker({ value, onChange, disabled = false }: Props) {
           <Text style={styles.addTileText}>{isPicking ? 'Picking…' : 'Add'}</Text>
         </Pressable>
 
-        {value.map((uri) => (
+        {safeValue.map((uri) => (
           <Pressable key={uri} style={styles.thumbWrap} onPress={() => removeUri(uri)} disabled={disabled || isPicking}>
             <Image source={{ uri }} style={styles.thumb} />
           </Pressable>
         ))}
       </View>
 
-      {value.length > 0 ? <Text style={styles.hint}>Tip: tap an image to remove it.</Text> : null}
+      {safeValue.length > 0 ? <Text style={styles.hint}>Tip: tap an image to remove it.</Text> : null}
     </View>
   );
 }

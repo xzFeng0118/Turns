@@ -1,17 +1,15 @@
 import { supabase } from '@/lib/supabase';
 import type { ListingStatus } from '@/types/listings';
-import type { MarketplaceItem } from '@/types/marketplace';
 
 type ItemsRow = {
   id: string;
   title: string;
   description: string | null;
-  price_cents: number;
-  condition: MarketplaceItem['condition'];
-  location: string;
+  price: number;
   images: string[] | null;
   status: ListingStatus;
   seller_id: string;
+  created_at: string;
 };
 
 export type SellerItem = {
@@ -21,9 +19,17 @@ export type SellerItem = {
   priceCents: number;
   images: string[];
   status: ListingStatus;
-  condition: MarketplaceItem['condition'];
-  location: string;
+  sellerId: string;
+  createdAt: string;
 };
+
+export type GetAvailableItemsResult =
+  | { ok: true; items: SellerItem[] }
+  | { ok: false; error: string };
+
+ export type GetItemByIdResult =
+   | { ok: true; item: SellerItem | null }
+   | { ok: false; error: string };
 
 type CreateItemInput = {
   title: string;
@@ -31,22 +37,44 @@ type CreateItemInput = {
   priceCents: number;
   images: string[];
   status?: ListingStatus;
-  condition?: MarketplaceItem['condition'];
-  location?: string;
 };
 
 type UpdateItemInput = Partial<CreateItemInput>;
+
+function normalizeImages(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((v): v is string => typeof v === 'string');
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((v): v is string => typeof v === 'string');
+      }
+    } catch {
+      // ignore
+    }
+
+    return [value];
+  }
+
+  return [];
+}
 
 function toSellerItem(row: ItemsRow): SellerItem {
   return {
     id: row.id,
     title: row.title,
     description: row.description ?? '',
-    priceCents: row.price_cents,
-    images: row.images ?? [],
+    priceCents: row.price,
+    images: normalizeImages(row.images),
     status: row.status,
-    condition: row.condition,
-    location: row.location,
+    sellerId: row.seller_id,
+    createdAt: row.created_at,
   };
 }
 
@@ -55,11 +83,9 @@ function toItemsUpdate(input: UpdateItemInput) {
 
   if (input.title !== undefined) update.title = input.title;
   if (input.description !== undefined) update.description = input.description;
-  if (input.priceCents !== undefined) update.price_cents = input.priceCents;
+  if (input.priceCents !== undefined) update.price = input.priceCents;
   if (input.images !== undefined) update.images = input.images;
   if (input.status !== undefined) update.status = input.status;
-  if (input.condition !== undefined) update.condition = input.condition;
-  if (input.location !== undefined) update.location = input.location;
 
   return update;
 }
@@ -88,14 +114,12 @@ export async function createItem(input: CreateItemInput): Promise<SellerItem> {
     .insert({
       title: input.title,
       description: input.description,
-      price_cents: input.priceCents,
+      price: input.priceCents,
       images: input.images,
       status: input.status ?? 'active',
-      condition: input.condition ?? 'good',
-      location: input.location ?? '',
       seller_id: userId,
     })
-    .select('id,title,description,price_cents,condition,location,images,status,seller_id')
+    .select('id,title,description,price,images,status,seller_id,created_at')
     .single();
 
   if (error) throw new Error(formatSupabaseError(error));
@@ -104,12 +128,68 @@ export async function createItem(input: CreateItemInput): Promise<SellerItem> {
   return toSellerItem(data as ItemsRow);
 }
 
+export async function getAvailableItems(limit: number, offset: number): Promise<GetAvailableItemsResult> {
+  try {
+    const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
+    const safeOffset = Math.max(0, Math.floor(offset));
+
+    const from = safeOffset;
+    const to = safeOffset + safeLimit - 1;
+
+    const { data, error } = await supabase
+      .from('items')
+      .select('id,title,description,price,images,status,seller_id,created_at')
+      .eq('status', 'available')
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      return { ok: false, error: formatSupabaseError(error) };
+    }
+
+    const items = ((data ?? []) as ItemsRow[]).map(toSellerItem);
+    return { ok: true, items };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Failed to load items.' };
+  }
+}
+
+ export async function getItemById(itemId: string): Promise<GetItemByIdResult> {
+   try {
+     const trimmedId = itemId.trim();
+     if (!trimmedId) {
+       return { ok: false, error: 'Missing item id' };
+     }
+
+     const { data, error } = await supabase
+       .from('items')
+       .select('id,title,description,price,images,status,seller_id,created_at')
+       .eq('id', trimmedId)
+       .maybeSingle();
+
+     if (error) {
+       return { ok: false, error: formatSupabaseError(error) };
+     }
+
+     if (!data) {
+       return { ok: true, item: null };
+     }
+
+     return { ok: true, item: toSellerItem(data as ItemsRow) };
+   } catch (e) {
+     return {
+       ok: false,
+       error: e instanceof Error ? e.message : 'Failed to load item.',
+     };
+   }
+ }
+
 export async function getMyItems(): Promise<SellerItem[]> {
   const userId = await requireUserId();
 
   const { data, error } = await supabase
     .from('items')
-    .select('id,title,description,price_cents,condition,location,images,status,seller_id')
+    .select('id,title,description,price,images,status,seller_id,created_at')
     .eq('seller_id', userId)
     .order('id', { ascending: false });
 
@@ -131,7 +211,7 @@ export async function updateItem(itemId: string, input: UpdateItemInput): Promis
     .update(update)
     .eq('id', itemId)
     .eq('seller_id', userId)
-    .select('id,title,description,price_cents,condition,location,images,status,seller_id')
+    .select('id,title,description,price,images,status,seller_id,created_at')
     .single();
 
   if (error) throw new Error(formatSupabaseError(error));
