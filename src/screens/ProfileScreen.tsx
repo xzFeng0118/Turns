@@ -23,43 +23,36 @@ export function ProfileScreen() {
     <Screen>
       <Text style={styles.title}>Profile</Text>
 
-      {user ? (
-        <>
-          <View style={styles.header}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initials}</Text>
-            </View>
+      <View style={styles.header}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
 
-            <View style={styles.userInfo}>
-              <Text style={styles.name}>Account</Text>
-              <Text style={styles.email}>{email}</Text>
-            </View>
-          </View>
+        <View style={styles.userInfo}>
+          <Text style={styles.name}>Account</Text>
+          <Text style={styles.email}>{email || '—'}</Text>
+        </View>
+      </View>
 
-          <Pressable style={[styles.button, loading ? styles.buttonDisabled : null]} onPress={signOut} disabled={loading}>
-            <Text style={styles.buttonText}>{loading ? 'Logging out…' : 'Logout'}</Text>
-          </Pressable>
+      <Pressable style={[styles.button, loading ? styles.buttonDisabled : null]} onPress={signOut} disabled={loading}>
+        <Text style={styles.buttonText}>{loading ? 'Logging out…' : 'Logout'}</Text>
+      </Pressable>
 
-          <ProfileListSection
-            title="My Listings"
-            emptyText="No listings yet."
-            data={listings.map((l: Listing) => ({
-              id: l.id,
-              title: l.title,
-              subtitle: `$${(l.priceCents / 100).toFixed(2)} · ${l.status}`,
-            }))}
-          />
-        </>
-      ) : (
-        <Text style={styles.meta}>You are not logged in.</Text>
-      )}
+      <ProfileListSection
+        title="My Listings"
+        emptyText="No listings yet."
+        data={listings.map((l: Listing) => ({
+          id: l.id,
+          title: l.title,
+          subtitle: `$${(l.priceCents / 100).toFixed(2)} · ${l.status}`,
+        }))}
+      />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '700' },
-  meta: { marginTop: 12, color: '#666' },
   header: {
     marginTop: 18,
     flexDirection: 'row',
