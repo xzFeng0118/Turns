@@ -23,31 +23,42 @@ function formatPostedAt(value: string | Date) {
 
 export function SellerInfo({ sellerLabel, postedAt }: Props) {
   return (
-    <View style={styles.wrap}>
-      <View style={styles.row}>
-        <Text style={styles.label}>Seller</Text>
-        <Text style={styles.value} numberOfLines={1}>
-          {sellerLabel}
-        </Text>
-      </View>
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>Seller</Text>
 
-      <View style={styles.divider} />
+      <View style={styles.rows}>
+        <View style={styles.row}>
+          <Text style={styles.label}>Identifier</Text>
+          <Text style={styles.value} numberOfLines={1}>
+            {sellerLabel}
+          </Text>
+        </View>
 
-      <View style={styles.row}>
-        <Text style={styles.label}>Posted</Text>
-        <Text style={styles.value}>{formatPostedAt(postedAt)}</Text>
+        <View style={styles.row}>
+          <Text style={styles.label}>Posted</Text>
+          <Text style={styles.value}>{formatPostedAt(postedAt)}</Text>
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
+  card: {
     borderWidth: 1,
-    borderColor: '#eee',
-    borderRadius: 14,
-    padding: 12,
-    backgroundColor: '#fff',
+    borderColor: '#e9e9e9',
+    borderRadius: 16,
+    padding: 14,
+    backgroundColor: '#f8fafc',
+  },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#111',
+  },
+  rows: {
+    marginTop: 12,
+    gap: 10,
   },
   row: {
     flexDirection: 'row',
@@ -58,20 +69,15 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#666',
+    color: '#667085',
     letterSpacing: 0.2,
     textTransform: 'uppercase',
   },
   value: {
     flex: 1,
     textAlign: 'right',
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '800',
     color: '#111',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#f0f0f0',
-    marginVertical: 10,
   },
 });

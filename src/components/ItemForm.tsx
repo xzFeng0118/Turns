@@ -39,7 +39,7 @@ export function ItemForm({ mode, initialValues, onSubmit, submitting = false, su
   const [title, setTitle] = useState(initialValues?.title ?? '');
   const [description, setDescription] = useState(initialValues?.description ?? '');
   const [priceText, setPriceText] = useState(centsToPriceText(initialValues?.priceCents ?? 0));
-  const [images, setImages] = useState<string[]>(initialValues?.images ?? []);
+  const [images, setImages] = useState<string[]>(Array.isArray(initialValues?.images) ? initialValues?.images ?? [] : []);
   const [errors, setErrors] = useState<{ title?: string; price?: string }>({});
 
   const effectiveSubmitLabel = useMemo(() => {

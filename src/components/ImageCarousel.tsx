@@ -5,6 +5,7 @@ import {
   ListRenderItemInfo,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Pressable,
   StyleSheet,
   useWindowDimensions,
   View,
@@ -13,28 +14,40 @@ import {
 type Props = {
   images: string[];
   height?: number;
+  aspectRatio?: number;
+  onPressImage?: (index: number) => void;
 };
 
 type ImageItemProps = {
   uri: string;
   width: number;
   height: number;
+  active: boolean;
+  onPress?: () => void;
 };
 
-const ImageItem = memo(function ImageItem({ uri, width, height }: ImageItemProps) {
+const ImageItem = memo(function ImageItem({ uri, width, height, active, onPress }: ImageItemProps) {
   return (
-    <View style={[styles.slide, { width, height }]}>
-      <Image source={{ uri }} style={styles.image} resizeMode="cover" />
-    </View>
+    <Pressable onPress={onPress} disabled={!onPress}>
+      <View style={[styles.slide, { width, height }, !active ? styles.slideInactive : null]}>
+        <Image source={{ uri }} style={styles.image} resizeMode="cover" />
+      </View>
+    </Pressable>
   );
 });
 
-export function ImageCarousel({ images, height = 320 }: Props) {
+export function ImageCarousel({ images, height, aspectRatio = 1, onPressImage }: Props) {
   const { width } = useWindowDimensions();
   const listRef = useRef<FlatList<string> | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const data = useMemo(() => images.filter(Boolean), [images]);
+
+  const resolvedHeight = useMemo(() => {
+    if (typeof height === 'number') return height;
+    const safeRatio = aspectRatio > 0 ? aspectRatio : 1;
+    return width > 0 ? width / safeRatio : 320;
+  }, [aspectRatio, height, width]);
 
   const onMomentumScrollEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -48,18 +61,26 @@ export function ImageCarousel({ images, height = 320 }: Props) {
   const keyExtractor = useCallback((uri: string, index: number) => `${index}-${uri}`, []);
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<string>) => {
-      return <ImageItem uri={item} width={width} height={height} />;
+    ({ item, index }: ListRenderItemInfo<string>) => {
+      return (
+        <ImageItem
+          uri={item}
+          width={width}
+          height={resolvedHeight}
+          active={index === activeIndex}
+          onPress={onPressImage ? () => onPressImage(index) : undefined}
+        />
+      );
     },
-    [height, width],
+    [activeIndex, onPressImage, resolvedHeight, width],
   );
 
   if (data.length === 0) {
-    return <View style={[styles.empty, { height }]} />;
+    return <View style={[styles.empty, { height: resolvedHeight }]} />;
   }
 
   return (
-    <View style={[styles.wrap, { height }]}>
+    <View style={[styles.wrap, { height: resolvedHeight }]}>
       <FlatList
         ref={(r) => {
           listRef.current = r;
@@ -69,6 +90,10 @@ export function ImageCarousel({ images, height = 320 }: Props) {
         renderItem={renderItem}
         horizontal
         pagingEnabled
+        snapToInterval={width}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        disableIntervalMomentum
         showsHorizontalScrollIndicator={false}
         bounces={false}
         onMomentumScrollEnd={onMomentumScrollEnd}
@@ -95,9 +120,14 @@ const styles = StyleSheet.create({
   wrap: {
     width: '100%',
     backgroundColor: '#fafafa',
+    borderRadius: 16,
+    overflow: 'hidden',
   },
   slide: {
     backgroundColor: '#f1f1f1',
+  },
+  slideInactive: {
+    opacity: 0.92,
   },
   image: {
     width: '100%',

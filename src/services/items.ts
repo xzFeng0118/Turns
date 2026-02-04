@@ -41,13 +41,37 @@ type CreateItemInput = {
 
 type UpdateItemInput = Partial<CreateItemInput>;
 
+function normalizeImages(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((v): v is string => typeof v === 'string');
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((v): v is string => typeof v === 'string');
+      }
+    } catch {
+      // ignore
+    }
+
+    return [value];
+  }
+
+  return [];
+}
+
 function toSellerItem(row: ItemsRow): SellerItem {
   return {
     id: row.id,
     title: row.title,
     description: row.description ?? '',
     priceCents: row.price,
-    images: row.images ?? [],
+    images: normalizeImages(row.images),
     status: row.status,
     sellerId: row.seller_id,
     createdAt: row.created_at,
