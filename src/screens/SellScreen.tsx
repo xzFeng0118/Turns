@@ -4,10 +4,14 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ItemCard } from '@/components/ItemCard';
 import { ItemForm, type ItemFormSubmitData } from '@/components/ItemForm';
 import { Screen } from '@/components/Screen';
+import { useAuth } from '@/contexts/AuthContext';
 import type { ListingStatus } from '@/types/listings';
 import { createItem, getMyItems, updateItem, type SellerItem } from '@/services/items';
+import { compressImage } from '@/utils/imageCompression';
+import { uploadImage } from '@/utils/uploadImage';
 
 export function SellScreen() {
+  const { user } = useAuth();
   const [items, setItems] = useState<SellerItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -60,21 +64,56 @@ export function SellScreen() {
     setError(undefined);
 
     try {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      const isRemoteUrl = (uri: string) => uri.startsWith('http://') || uri.startsWith('https://');
+
       if (mode === 'edit' && editingItem) {
+        const uploadedUrls: string[] = [];
+
+        for (const uri of data.images) {
+          if (isRemoteUrl(uri)) {
+            uploadedUrls.push(uri);
+            continue;
+          }
+
+          const compressedUri = await compressImage(uri);
+          const publicUrl = await uploadImage(compressedUri, user.id, editingItem.id);
+          uploadedUrls.push(publicUrl);
+        }
+
         await updateItem(editingItem.id, {
           title: data.title,
           description: data.description,
           priceCents: data.priceCents,
-          images: data.images,
+          images: uploadedUrls,
         });
       } else {
-        await createItem({
+        const created = await createItem({
           title: data.title,
           description: data.description,
           priceCents: data.priceCents,
-          images: data.images,
+          images: [],
           status: 'active' as ListingStatus,
         });
+
+        const uploadedUrls: string[] = [];
+        for (const uri of data.images) {
+          if (isRemoteUrl(uri)) {
+            uploadedUrls.push(uri);
+            continue;
+          }
+
+          const compressedUri = await compressImage(uri);
+          const publicUrl = await uploadImage(compressedUri, user.id, created.id);
+          uploadedUrls.push(publicUrl);
+        }
+
+        if (uploadedUrls.length > 0) {
+          await updateItem(created.id, { images: uploadedUrls });
+        }
       }
 
       await loadItems();

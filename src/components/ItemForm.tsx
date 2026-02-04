@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+
+import { ImagePicker } from '@/components/ImagePicker';
 
 export type ItemFormMode = 'create' | 'edit';
 
@@ -38,28 +40,12 @@ export function ItemForm({ mode, initialValues, onSubmit, submitting = false, su
   const [description, setDescription] = useState(initialValues?.description ?? '');
   const [priceText, setPriceText] = useState(centsToPriceText(initialValues?.priceCents ?? 0));
   const [images, setImages] = useState<string[]>(initialValues?.images ?? []);
-  const [imageUrl, setImageUrl] = useState('');
   const [errors, setErrors] = useState<{ title?: string; price?: string }>({});
 
   const effectiveSubmitLabel = useMemo(() => {
     if (submitLabel) return submitLabel;
     return mode === 'edit' ? 'Save changes' : 'Create item';
   }, [mode, submitLabel]);
-
-  const addImageUrl = () => {
-    const uri = imageUrl.trim();
-    if (!uri) return;
-    if (images.includes(uri)) {
-      setImageUrl('');
-      return;
-    }
-    setImages((prev) => [...prev, uri]);
-    setImageUrl('');
-  };
-
-  const removeImageUrl = (uri: string) => {
-    setImages((prev) => prev.filter((i) => i !== uri));
-  };
 
   const handleSubmit = async () => {
     const nextErrors: { title?: string; price?: string } = {};
@@ -115,27 +101,7 @@ export function ItemForm({ mode, initialValues, onSubmit, submitting = false, su
       {errors.price ? <Text style={styles.error}>{errors.price}</Text> : null}
 
       <Text style={styles.label}>Images</Text>
-      <View style={styles.addImageRow}>
-        <TextInput
-          value={imageUrl}
-          onChangeText={setImageUrl}
-          placeholder="Paste an image URL"
-          autoCapitalize="none"
-          autoCorrect={false}
-          style={[styles.input, styles.addImageInput]}
-        />
-        <Pressable style={[styles.smallButton, submitting ? styles.buttonDisabled : null]} onPress={addImageUrl} disabled={submitting}>
-          <Text style={styles.smallButtonText}>Add</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.grid}>
-        {images.map((uri) => (
-          <Pressable key={uri} style={styles.thumbWrap} onPress={() => removeImageUrl(uri)} disabled={submitting}>
-            <Image source={{ uri }} style={styles.thumb} />
-          </Pressable>
-        ))}
-      </View>
+      <ImagePicker value={images} onChange={setImages} disabled={submitting} />
 
       <Pressable style={[styles.submitButton, submitting ? styles.buttonDisabled : null]} onPress={handleSubmit} disabled={submitting}>
         <Text style={styles.submitButtonText}>{submitting ? 'Saving…' : effectiveSubmitLabel}</Text>
@@ -159,32 +125,6 @@ const styles = StyleSheet.create({
   },
   inputError: { borderColor: '#b00020' },
   error: { marginTop: 8, color: '#b00020' },
-  addImageRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  addImageInput: { flex: 1 },
-  smallButton: {
-    height: 44,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    backgroundColor: '#111',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  smallButtonText: { color: '#fff', fontWeight: '700' },
-  grid: {
-    marginTop: 12,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  thumbWrap: {
-    width: 96,
-    height: 96,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#eee',
-  },
-  thumb: { width: '100%', height: '100%' },
   submitButton: {
     marginTop: 18,
     paddingVertical: 12,
