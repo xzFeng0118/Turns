@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MediaService } from '@/services/mediaService';
@@ -7,14 +7,11 @@ type Props = {
   value: string[];
   onChange: (uris: string[]) => void;
   disabled?: boolean;
-  buttonLabel?: string;
 };
 
-export function ImagePicker({ value, onChange, disabled = false, buttonLabel }: Props) {
+export function ImagePicker({ value, onChange, disabled = false }: Props) {
   const [isPicking, setIsPicking] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
-
-  const effectiveLabel = useMemo(() => buttonLabel ?? 'Select photos', [buttonLabel]);
 
   const pickFromLibrary = async () => {
     setIsPicking(true);
@@ -49,13 +46,21 @@ export function ImagePicker({ value, onChange, disabled = false, buttonLabel }: 
 
   return (
     <View>
-      <Pressable style={[styles.button, disabled || isPicking ? styles.buttonDisabled : null]} onPress={pickFromLibrary} disabled={disabled || isPicking}>
-        <Text style={styles.buttonText}>{isPicking ? 'Picking…' : effectiveLabel}</Text>
-      </Pressable>
-
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <View style={styles.grid}>
+        <Pressable
+          style={[styles.addTile, disabled || isPicking ? styles.tileDisabled : null]}
+          onPress={pickFromLibrary}
+          disabled={disabled || isPicking}
+        >
+          <View style={styles.plusIcon}>
+            <View style={styles.plusBarH} />
+            <View style={styles.plusBarV} />
+          </View>
+          <Text style={styles.addTileText}>{isPicking ? 'Picking…' : 'Add'}</Text>
+        </Pressable>
+
         {value.map((uri) => (
           <Pressable key={uri} style={styles.thumbWrap} onPress={() => removeUri(uri)} disabled={disabled || isPicking}>
             <Image source={{ uri }} style={styles.thumb} />
@@ -69,16 +74,6 @@ export function ImagePicker({ value, onChange, disabled = false, buttonLabel }: 
 }
 
 const styles = StyleSheet.create({
-  button: {
-    marginTop: 16,
-    alignSelf: 'flex-start',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    backgroundColor: '#111',
-  },
-  buttonText: { color: '#fff', fontWeight: '600' },
-  buttonDisabled: { opacity: 0.6 },
   error: { marginTop: 12, color: '#b00020' },
   grid: {
     marginTop: 16,
@@ -86,6 +81,38 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
   },
+  addTile: {
+    width: 96,
+    height: 96,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fafafa',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tileDisabled: { opacity: 0.6 },
+  plusIcon: {
+    width: 26,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  plusBarH: {
+    position: 'absolute',
+    width: 20,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: '#111',
+  },
+  plusBarV: {
+    position: 'absolute',
+    width: 3,
+    height: 20,
+    borderRadius: 2,
+    backgroundColor: '#111',
+  },
+  addTileText: { marginTop: 8, fontWeight: '700', color: '#111', fontSize: 12 },
   thumbWrap: {
     width: 96,
     height: 96,
